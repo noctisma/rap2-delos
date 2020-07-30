@@ -2,7 +2,7 @@
 import router from './router'
 import * as _ from 'underscore'
 import Pagination from './utils/pagination'
-import { User, Organization, Repository, Module, Interface, Property, QueryInclude, Logger, DefaultVal } from '../models'
+import { User, Organization, Repository, Module, Interface, Entity, Property, QueryInclude, Logger, DefaultVal } from '../models'
 import Tree from './utils/tree'
 import { AccessUtils, ACCESS_TYPE } from './utils/access'
 import * as Consts from './utils/const'
@@ -23,6 +23,7 @@ router.get('/app/get', async (ctx, next) => {
     repository: Repository,
     module: Module,
     interface: Interface,
+    model: Entity,
     property: Property,
   }
   for (let name in hooks) {
@@ -237,6 +238,7 @@ router.get('/repository/get', async (ctx) => {
         [
           { model: Module, as: 'modules' },
           { model: Interface, as: 'interfaces' },
+          // { model: Entity, as: 'entities' },
           'priority',
           'asc',
         ],
@@ -1033,6 +1035,105 @@ router.post('/properties/update', isLoggedIn, async (ctx, next) => {
     repositoryId: itf.repositoryId,
     moduleId: itf.moduleId,
     interfaceId: itf.id,
+  })
+})
+
+router.post('/entity/properties/update', isLoggedIn, async (ctx, next) => {
+  const entId = +ctx.query.ent
+  let { properties } = ctx.request.body // JSON.parse(ctx.request.body)
+  properties = Array.isArray(properties) ? properties : [properties]
+
+  let ent = await Entity.findByPk(entId)
+  if (!await AccessUtils.canUserAccess(ACCESS_TYPE.ENTITY_SET, ctx.session.id, entId)) {
+    ctx.body = Consts.COMMON_ERROR_RES.ACCESS_DENY
+    return
+  }
+
+  // if (summary.name) {
+  //   ent.name = summary.name
+  // }
+  // if (summary.url) {
+  //   itf.url = summary.url
+  // }
+  // if (summary.method) {
+  //   itf.method = summary.method
+  // }
+  // if (summary.description) {
+  //   itf.description = summary.description
+  // }
+
+  // await itf.save()
+
+  // 删除不在更新列表中的属性
+  // DONE 2.2 清除幽灵属性：子属性的父属性不存在（原因：前端删除父属性后，没有一并删除后代属性，依然传给了后端）
+  // SELECT * FROM properties WHERE parentId!=-1 AND parentId NOT IN (SELECT id FROM properties)
+  /* 查找和删除脚本
+    SELECT * FROM properties
+      WHERE
+        deletedAt is NULL AND
+        parentId != - 1 AND
+        parentId NOT IN (
+          SELECT * FROM (
+            SELECT id FROM properties WHERE deletedAt IS NULL
+          ) as p
+        )
+  */
+  let existingProperties = properties.filter((item: any) => !item.memory)
+  let result = await Property.destroy({
+    where: {
+      id: { [Op.notIn]: existingProperties.map((item: any) => item.id) },
+      entityId: entId
+    }
+  })
+
+  // 更新已存在的属性
+  for (let item of existingProperties) {
+    let affected = await Property.update(item, {
+      where: { id: item.id },
+    })
+    result += affected[0]
+  }
+  // 插入新增加的属性
+  let newProperties = properties.filter((item: any) => item.memory)
+  let memoryIdsMap: any = {}
+  for (let item of newProperties) {
+    let created = await Property.create(Object.assign({}, item, {
+      id: undefined,
+      parentId: -1,
+      priority: item.priority || Date.now()
+    }))
+    memoryIdsMap[item.id] = created.id
+    item.id = created.id
+    result += 1
+  }
+  // 同步 parentId
+  for (let item of newProperties) {
+    let parentId = memoryIdsMap[item.parentId] || item.parentId
+    await Property.update({ parentId }, {
+      where: { id: item.id },
+    })
+  }
+  ent = await Entity.findByPk(entId, {
+    include: (QueryInclude.RepositoryHierarchy as any).include[0].include,
+  })
+  ctx.body = {
+    data: {
+      result,
+      properties: ent.properties,
+    }
+  }
+  return next()
+}, async (ctx) => {
+  if (ctx.body.data === 0) return
+  let ent = await Entity.findByPk(ctx.query.ent, {
+    attributes: { exclude: [] }
+  })
+  await Logger.create({
+    userId: ctx.session.id,
+    type: 'update',
+    repositoryId: ent.repositoryId,
+    moduleId: ent.moduleId,
+    entityId: ent.id,
   })
 })
 

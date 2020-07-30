@@ -1,8 +1,7 @@
 import { Table, Column, Model, AutoIncrement, PrimaryKey, AllowNull, DataType, Default, BelongsTo, ForeignKey } from 'sequelize-typescript'
-import { User, Interface, Module, Repository } from '../'
+import { User, Interface, Module, Repository, Entity } from '../'
 
-export enum SCOPES { REQUEST = 'request', RESPONSE = 'response' }
-export enum TYPES { STRING = 'String', NUMBER = 'Number', BOOLEAN = 'Boolean', OBJECT = 'Object', ARRAY = 'Array', FUNCTION = 'Function', REGEXP = 'RegExp', Null = 'Null' }
+export enum SCOPES { REQUEST = 'request', RESPONSE = 'response', ENTITY = 'entity'}
 
 export enum REQUEST_PARAMS_TYPE {
   HEADERS = 1,
@@ -12,7 +11,6 @@ export enum REQUEST_PARAMS_TYPE {
 
 @Table({ paranoid: true, freezeTableName: false, timestamps: true })
 export default class Property extends Model<Property> {
-  public static TYPES = TYPES
   public static SCOPES = SCOPES
 
   @AutoIncrement
@@ -26,18 +24,19 @@ export default class Property extends Model<Property> {
   @AllowNull(false)
   @Default(SCOPES.RESPONSE)
   @Column({
-    type: DataType.ENUM(SCOPES.REQUEST, SCOPES.RESPONSE),
+    type: DataType.ENUM(SCOPES.REQUEST, SCOPES.RESPONSE, SCOPES.ENTITY),
     comment: 'property owner',
   })
   scope: string
 
   @AllowNull(false)
-  @Column({
-    type: DataType.ENUM(TYPES.STRING, TYPES.NUMBER, TYPES.BOOLEAN, TYPES.OBJECT, TYPES.ARRAY, TYPES.FUNCTION, TYPES.REGEXP, TYPES.Null),
-    comment: 'property type',
-  })
+  @Column
   /** Data Type */
   type: string
+
+  @Column
+  /** 序号 */
+  index: number
 
   @AllowNull(false)
   @Default(2)
@@ -72,6 +71,10 @@ export default class Property extends Model<Property> {
   @Column
   interfaceId: number
 
+  @ForeignKey(() => Entity)
+  @Column
+  entityId: number
+
   @ForeignKey(() => User)
   @Column
   creatorId: number
@@ -89,6 +92,9 @@ export default class Property extends Model<Property> {
 
   @BelongsTo(() => Interface, 'interfaceId')
   interface: Interface
+
+  @BelongsTo(() => Entity, 'entityId')
+  entity: Entity
 
   @BelongsTo(() => Module, 'moduleId')
   module: Module

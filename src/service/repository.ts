@@ -1,4 +1,4 @@
-import { Repository, RepositoriesMembers, Interface, Property, Module } from '../models'
+import { Repository, RepositoriesMembers, Interface, Entity, Property, Module } from '../models'
 import { MoveOp } from '../models/bo/interface'
 import RedisService, { CACHE_KEY } from '../service/redis'
 import { AccessUtils, ACCESS_TYPE } from '../routes/utils/access'
@@ -140,6 +140,66 @@ export default class RepositoryService {
         const newProperty = await Property.create({
           ...props,
           interfaceId: newItf.id,
+          parentId: newParentId,
+          repositoryId: destRepoId,
+          moduleId: destModuleId,
+        })
+        idMap[id + ''] = newProperty.id
+      }
+    }
+    await Promise.all([
+      RedisService.delCache(CACHE_KEY.REPOSITORY_GET, fromRepoId),
+      RedisService.delCache(CACHE_KEY.REPOSITORY_GET, destRepoId),
+    ])
+  }
+
+  public static async moveEntity(
+    op: MoveOp,
+    entId: number,
+    destRepoId: number,
+    destModuleId: number,
+    nameSuffix = '副本'
+  ) {
+    const ent = await Entity.findByPk(entId)
+    const fromRepoId = ent.repositoryId
+    if (op === MoveOp.MOVE) {
+      ent.moduleId = destModuleId
+      ent.repositoryId = destRepoId
+      await Property.update(
+        {
+          moduleId: destModuleId,
+          repositoryId: destRepoId,
+        },
+        {
+          where: {
+            entityId: ent.id,
+          },
+        },
+      )
+      await ent.save()
+    } else if (op === MoveOp.COPY) {
+      const { id, name, ...otherProps } = ent.toJSON() as Entity
+      const newEnt = await Entity.create({
+        name: name + nameSuffix,
+        ...otherProps,
+        repositoryId: destRepoId,
+        moduleId: destModuleId,
+      })
+
+      const properties = await Property.findAll({
+        where: {
+          entityId: ent.id,
+        },
+        order: [['parentId', 'asc']],
+      })
+      // 解决parentId丢失的问题
+      let idMap: any = {}
+      for (const property of properties) {
+        const { id, parentId, ...props } = property.toJSON() as Property
+        const newParentId = idMap[parentId + ''] ? idMap[parentId + ''] : -1
+        const newProperty = await Property.create({
+          ...props,
+          entityId: newEnt.id,
           parentId: newParentId,
           repositoryId: destRepoId,
           moduleId: destModuleId,

@@ -279,7 +279,7 @@ const transformRapParams = p => {
   if (/^function/.test(value)) type = 'Function' // @mock=function(){} => Function
   if (/^\$order/.test(value)) {
     // $order => Array|+1
-    type = 'Array'
+    type = 'List'
     rule = '+1'
     let orderArgs = /\$order\((.+)\)/.exec(value)
     if (orderArgs) value = `[${orderArgs[1]}]`
@@ -417,7 +417,7 @@ export default class MigrateService {
             if (/^function/.test(value)) type = 'Function' // @mock=function(){} => Function
             if (/^\$order/.test(value)) {
               // $order => Array|+1
-              type = 'Array'
+              type = 'List'
               rule = '+1'
               let orderArgs = /\$order\((.+)\)/.exec(value)
               if (orderArgs) value = `[${orderArgs[1]}]`

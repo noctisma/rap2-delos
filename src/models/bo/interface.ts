@@ -5,8 +5,6 @@ import * as Sequelize from 'sequelize'
 
 const Op = Sequelize.Op
 
-enum methods { GET = 'GET', POST = 'POST', PUT = 'PUT', DELETE = 'DELETE' }
-
 export enum MoveOp {
   MOVE = 1,
   COPY = 2
@@ -46,8 +44,6 @@ export default class Interface extends Model<Interface> {
     }
   }
 
-  public static METHODS = methods
-
   public request?: object
   public response?: object
 
@@ -63,6 +59,10 @@ export default class Interface extends Model<Interface> {
   @AllowNull(false)
   @Column(DataType.STRING(256))
   url: string
+
+  @AllowNull(false)
+  @Column(DataType.STRING(16))
+  type: string
 
   @AllowNull(false)
   @Column({ comment: 'API method' })

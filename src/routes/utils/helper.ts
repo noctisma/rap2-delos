@@ -122,11 +122,11 @@ const initInterface = async (itf: Interface) => {
   }))
   let array = await Property.create(genExampleProperty({
     scope: 'response',
-    name: 'array',
-    type: 'Array',
+    name: 'list',
+    type: 'List',
     rule: '1-10',
     value: '',
-    description: '数组属性示例',
+    description: '列表属性示例',
     creatorId,
     repositoryId,
     moduleId,
@@ -161,7 +161,7 @@ const initInterface = async (itf: Interface) => {
   await Property.create(genExampleProperty({
     scope: 'response',
     name: 'items',
-    type: 'Array',
+    type: 'List',
     rule: '',
     value: `[1, true, 'hello', /\\w{10}/]`,
     description: '自定义数组元素示例',

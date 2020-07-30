@@ -1,5 +1,5 @@
 import { Table, Column, Model, HasMany, AutoIncrement, PrimaryKey, AllowNull, DataType, Default, BelongsTo, ForeignKey, BeforeCreate, BeforeUpdate, BeforeDestroy, BeforeBulkCreate, BeforeBulkDestroy, BeforeBulkUpdate } from 'sequelize-typescript'
-import { User, Repository, Interface } from '../'
+import { User, Repository, Interface, Entity } from '../'
 import RedisService, { CACHE_KEY } from '../../service/redis'
 import * as Sequelize from 'sequelize'
 
@@ -73,4 +73,7 @@ export default class Module extends Model<Module> {
 
   @HasMany(() => Interface, 'moduleId')
   interfaces: Interface[]
+
+  @HasMany(() => Entity, 'moduleId')
+  entities: Entity[]
 }

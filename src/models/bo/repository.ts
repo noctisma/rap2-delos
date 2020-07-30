@@ -1,5 +1,5 @@
 import { Table, Column, Model, HasMany, AutoIncrement, PrimaryKey, AllowNull, DataType, Default, BelongsTo, BelongsToMany, ForeignKey, BeforeUpdate, BeforeCreate, BeforeDestroy, BeforeBulkCreate, BeforeBulkUpdate, BeforeBulkDestroy } from 'sequelize-typescript'
-import { User, Organization, Module, Interface, RepositoriesCollaborators } from '../'
+import { User, Organization, Module, Interface, RepositoriesCollaborators, Entity } from '../'
 import RedisService, { CACHE_KEY } from '../../service/redis'
 
 @Table({ paranoid: true, freezeTableName: false, timestamps: true })
@@ -82,6 +82,9 @@ export default class Repository extends Model<Repository> {
 
   @HasMany(() => Module, 'repositoryId')
   interfaces: Interface[]
+
+  @HasMany(() => Module, 'repositoryId')
+  entities: Entity[]
 
   @BelongsToMany(() => Repository, () => RepositoriesCollaborators, 'repositoryId', 'collaboratorId')
   collaborators: Repository[]

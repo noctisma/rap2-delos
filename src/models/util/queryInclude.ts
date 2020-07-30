@@ -5,6 +5,7 @@ import Repository from '../bo/repository'
 import Module from '../bo/module'
 import Organization from '../bo/organization'
 import Interface from '../bo/interface'
+import Entity from '../bo/entity'
 import Property from '../bo/property'
 import { IncludeOptions } from 'sequelize'
 
@@ -78,6 +79,13 @@ const QueryInclude: IQueryInclude = {
     paranoid: false,
     required: false,
   },
+  Entities: {
+    model: Entity,
+    as: 'entities',
+    attributes: { exclude: [] },
+    paranoid: false,
+    required: false,
+  },
   Collaborators: {
     model: Repository,
     as: 'collaborators',
@@ -111,6 +119,26 @@ const QueryInclude: IQueryInclude = {
           },
         ],
       },
+      {
+        model: Entity,
+        as: 'entities',
+        attributes: { exclude: [] },
+        required: false,
+        include: [
+          {
+            model: User,
+            as: 'locker',
+            attributes: { exclude: ['password', ...Helper.exclude.generalities] },
+            required: false,
+          },
+          {
+            model: Property,
+            as: 'properties',
+            attributes: { exclude: [] },
+            required: false,
+          },
+        ],
+      },
     ],
   },
   RepositoryHierarchyExcludeProperty: {
@@ -122,6 +150,20 @@ const QueryInclude: IQueryInclude = {
       {
         model: Interface,
         as: 'interfaces',
+        attributes: { exclude: [] },
+        required: false,
+        include: [
+          {
+            model: User,
+            as: 'locker',
+            attributes: { exclude: ['password', ...Helper.exclude.generalities] },
+            required: false,
+          },
+        ],
+      },
+      {
+        model: Entity,
+        as: 'entities',
         attributes: { exclude: [] },
         required: false,
         include: [

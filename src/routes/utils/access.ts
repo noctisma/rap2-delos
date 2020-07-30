@@ -1,6 +1,6 @@
 import OrganizationService from '../../service/organization'
 import RepositoryService from '../../service/repository'
-import { Module, Interface, Property } from '../../models'
+import { Module, Interface, Property, Entity } from '../../models'
 
 export enum ACCESS_TYPE {
   ORGANIZATION_GET,
@@ -13,6 +13,8 @@ export enum ACCESS_TYPE {
   INTERFACE_SET,
   PROPERTY_GET,
   PROPERTY_SET,
+  ENTITY_GET,
+  ENTITY_SET,
   USER,
   ADMIN,
 }
@@ -54,6 +56,12 @@ export class AccessUtils {
     ) {
       const itf = await Interface.findByPk(entityId)
       return RepositoryService.canUserAccessRepository(curUserId, itf.repositoryId, token)
+    } else if (
+      accessType === ACCESS_TYPE.ENTITY_GET ||
+      accessType === ACCESS_TYPE.ENTITY_SET
+    ) {
+      const ent = await Entity.findByPk(entityId)
+      return RepositoryService.canUserAccessRepository(curUserId, ent.repositoryId, token)
     } else if (accessType === ACCESS_TYPE.PROPERTY_GET || accessType === ACCESS_TYPE.PROPERTY_SET) {
       const p = await Property.findByPk(entityId)
       return RepositoryService.canUserAccessRepository(curUserId, p.repositoryId, token)

@@ -11,7 +11,7 @@ const arrayToTree = (list: any[]): any => {
     }
     const obj: { [k: string]: any } = {}
     children.forEach((e: any) => {
-      if (e.type === 'Array' || e.type === 'Object') {
+      if (e.type === 'List' || e.type === 'Set' || e.type === 'Map' || e.type === 'Object') {
         obj[e.name + `: ${e.type} ${e.description ? `(${e.description})` : ''}`] = getValue(e)
       } else {
         obj[e.name] = getValue(e)

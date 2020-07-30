@@ -1,5 +1,5 @@
 import {  Table, Column, Model,  AutoIncrement, PrimaryKey, AllowNull, DataType, BelongsTo, ForeignKey } from 'sequelize-typescript'
-import { User, Repository, Organization, Module, Interface } from '../'
+import { User, Repository, Organization, Module, Interface, Entity } from '../'
 
 enum types {
   CREATE = 'create', UPDATE = 'update', DELETE = 'delete',
@@ -47,6 +47,10 @@ export default class Logger extends Model<Logger> {
   @Column
   interfaceId: number
 
+  @ForeignKey(() => Entity)
+  @Column
+  entityId: number
+
   @BelongsTo(() => User, 'creatorId')
   creator: User
 
@@ -64,5 +68,8 @@ export default class Logger extends Model<Logger> {
 
   @BelongsTo(() => Interface, 'interfaceId')
   interface: Interface
+
+  @BelongsTo(() => Entity, 'entityId')
+  entity: Entity
 
 }

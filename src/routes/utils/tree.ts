@@ -66,10 +66,16 @@ export default class Tree {
           case 'String':
             result[item.name + rule] = item.value
             break
-          case 'Number':
+          case 'Int':
             if (value === '') value = 1
-            let parsed = parseFloat(value)
-            if (!isNaN(parsed)) value = parsed
+            let parsedInt = parseFloat(value)
+            if (!isNaN(parsedInt)) value = parsedInt
+            result[item.name + rule] = value
+            break
+          case 'Long':
+            if (value === '') value = 1
+            let parsedLong = parseFloat(value)
+            if (!isNaN(parsedLong)) value = parsedLong
             result[item.name + rule] = value
             break
           case 'Boolean':
@@ -79,16 +85,23 @@ export default class Tree {
             value = !!value
             result[item.name + rule] = value
             break
-          case 'Function':
-          case 'RegExp':
-            try {
-              result[item.name + rule] = vm.run('(' + item.value + ')')
-            } catch (e) {
-              console.warn(
-                `TreeToTemplate ${e.message}: ${item.type} { ${item.name}${rule}: ${item.value} }`,
-              ) // TODO 2.2 怎么消除异常值？
-              result[item.name + rule] = item.value
-            }
+          case 'Short':
+            if (value === '') value = 1
+            let parsedShort = parseFloat(value)
+            if (!isNaN(parsedShort)) value = parsedShort
+            result[item.name + rule] = value
+            break
+          case 'Byte':
+            if (value === '') value = 1
+            let parsedByte = parseFloat(value)
+            if (!isNaN(parsedByte)) value = parsedByte
+            result[item.name + rule] = value
+            break
+          case 'Double':
+            if (value === '') value = 1
+            let parsedDouble = parseFloat(value)
+            if (!isNaN(parsedDouble)) value = parsedDouble
+            result[item.name + rule] = value
             break
           case 'Object':
             if (item.value) {
@@ -104,7 +117,7 @@ export default class Tree {
               })
             }
             break
-          case 'Array':
+          case 'List':
             if (item.value) {
               try {
                 result[item.name + rule] = vm.run(`(${item.value})`)
@@ -115,6 +128,34 @@ export default class Tree {
               result[item.name + rule] = item.children.length ? [{}] : []
               item.children.forEach((child: any) => {
                 parse(child, result[item.name + rule][0])
+              })
+            }
+            break
+          case 'Set':
+            if (item.value) {
+              try {
+                result[item.name + rule] = vm.run(`(${item.value})`)
+              } catch (e) {
+                result[item.name + rule] = item.value
+              }
+            } else {
+              result[item.name + rule] = item.children.length ? [{}] : []
+              item.children.forEach((child: any) => {
+                parse(child, result[item.name + rule][0])
+              })
+            }
+            break
+          case 'Map':
+            if (item.value) {
+              try {
+                result[item.name + rule] = vm.run(`(${item.value})`)
+              } catch (e) {
+                result[item.name + rule] = item.value
+              }
+            } else {
+              result[item.name + rule] = {}
+              item.children.forEach((child: any) => {
+                parse(child, result[item.name + rule])
               })
             }
             break
@@ -314,7 +355,7 @@ export default class Tree {
       }
       let type = schema.type[0].toUpperCase() + schema.type.slice(1)
       let rule = ''
-      if (type === 'Array' && schema.items && schema.items.length > 1) {
+      if (type === 'List' && schema.items && schema.items.length > 1) {
         rule = schema.items.length + ''
       }
       let value = /Array|Object/.test(type) ? '' : schema.template
@@ -337,7 +378,7 @@ export default class Tree {
             // 比如 [{a:1},{a:2}]
             // 我们可以用 type: Array rule: +1 value: [1,2] 进行还原
             value = JSON.stringify(valueArr)
-            type = 'Array'
+            type = 'List'
             rule = '+1'
           }
         }
@@ -384,9 +425,9 @@ export default class Tree {
         schema.properties.forEach((item: any) => {
           const childSiblings = hasSiblings
             ? siblings.map(
-                (s: any) =>
-                  (s && s.properties && s.properties.find((p: any) => p && p.name === item.name)) || null,
-              )
+              (s: any) =>
+                (s && s.properties && s.properties.find((p: any) => p && p.name === item.name)) || null,
+            )
             : undefined
           handleJSONSchema(item, property, memoryProperties, childSiblings)
         })
